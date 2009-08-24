@@ -32,8 +32,10 @@
 #include "common.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h> 
 #include <time.h>
+
 
 int tcp_connect(const char *host, int port);
 int tcp_send(int sockfd, char *buf, int ms);

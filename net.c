@@ -232,3 +232,94 @@ tcp_recv(int sockfd, int ms, int max, int *total)
     }
     return msg;
 }
+
+#ifdef USE_OLD_RESOLVE
+    bool lookup(const char *s, const char *resolved)
+    {
+        struct hostent *hp;
+
+        if(inet_aton(s, NULL))
+        {
+            /* Is an IP address */
+            hp = gethostbyaddr((char*)&addr, sizeof(addr), AF_INET);
+
+            if(hp != NULL)
+            {
+                resolved = hp->h_name;
+                return true;
+            }
+        }
+        else
+        {
+            /* Not an IP address */
+            hp = gethostbyname(s);
+
+            if(hp!=NULL)
+            {
+                resolved = inet_ntoa(*(struct in_addr*)hp->h_addr_list[0]);
+                return true;
+            }
+        }
+        return false;
+    }
+#else
+    bool lookup(const char *s, const char *resolved)
+    {
+        char hostbuf[NI_MAXHOST];
+        struct addrinfo *res;
+        struct addrinfo hints;
+        const char *addr;
+        int     err;
+
+        memset((char *) &hints, 0, sizeof(hints));
+
+        hints.ai_family = AF_INET; /* AF_INET - ipv4.
+                                      * AF_INET6 - ipv6.
+                                      * PF_UNSPEC - both / either.
+                                      */
+
+        hints.ai_flags = AI_CANONNAME; /* Flag to populate ai_canonname 
+                                        * with the 'official' name for the host.
+                                        */
+
+        hints.ai_socktype = SOCK_STREAM; /* NOTE: use 0 for any socket type. */
+
+        if ((err = getaddrinfo(s, NULL, &hints, &res)) != 0)
+        {
+            /*host/address lookup failure.*/
+            freeaddrinfo(res);
+            return false;
+        }
+
+        if(inet_aton(s, NULL))
+        {
+            /* We've been given an IP, retreive the name. */
+            err = getnameinfo(res->ai_addr, res->ai_addrlen, hostbuf, 
+                              sizeof(hostbuf), NULL, 0, NI_NAMEREQD);
+
+            if(err)
+            {
+                /* getnameinfo failed. Free our resources and bail.
+                 * Note - could use gai_strerror(err) to inspect
+                 * the error.
+                 */
+                freeaddrinfo(res);
+                return false;
+            }
+        }
+        else
+        {
+            /* We've been given a host, get the IP address. */
+            addr = (char *) &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+
+            if (inet_ntop(res->ai_family, addr, hostbuf, sizeof(hostbuf)) == 0)
+            {
+                freeaddrinfo(res);
+                return false;
+            }
+        }
+        resolved = hostbuf;
+        freeaddrinfo(res);
+        return true;
+    }
+#endif
