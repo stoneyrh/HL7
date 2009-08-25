@@ -28,6 +28,48 @@
 
 
 #include "net.h"
+#include "proto.h"
+
+#if 0
+    bool Socket::create()
+    {
+        int tw; /* TIME_WAIT */
+        sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
+
+        if (!valid())
+            return false;
+
+
+        tw = 1;
+
+        /* TODO: As noted in bind and listen, need to peek
+         * at return value and act accordingly.
+         */
+
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR,(const char *)&tw, sizeof(tw)) == -1)
+            return false;
+
+        return true;
+    }
+#endif
+
+bool
+sock_create(int *sockfd)
+{
+    int tw = 1;
+    *sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if(*sockfd == -1)
+        return false;
+
+    if (setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR,(const char *)&tw, sizeof(tw)) == -1)
+        return false;
+
+
+    return true;
+}
+
+
 
 /**
  * \fn tcp_connect
@@ -40,42 +82,36 @@
  *  to connect.
  */
 
-int
-tcp_connect(const char *host, int port)
+bool
+tcp_connect(const char *host, int port, int *sockfd)
 {
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    int sockfd;
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if(sockfd == -1)
-        return -1;
+    if(!sock_create(sockfd))
+        return false;
     
     server = gethostbyname(host);
-
     if(server == NULL)
     {
-        close(sockfd);
-        return -2;
+        close(*sockfd);
+        *sockfd = -2;
+        return false;
     }
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
-
-    bcopy((char *) server->h_addr,
-          (char *) &serv_addr.sin_addr.s_addr,
-          server->h_length);
-
+    memcpy((char *)&serv_addr.sin_addr.s_addr,(char *)server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
 
-    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+    if (connect(*sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
     {
-        close(sockfd);
-        return -3;
+        close(*sockfd);
+        *sockfd = -3;
+        return false;
     }
-    return sockfd;
+    return true;
 }
 
 /** 
@@ -86,11 +122,10 @@ tcp_connect(const char *host, int port)
  *
  * \param int ms - How long to wait for data, in milliseconds.
  *
- * \returns - Same as setsockopt - zero on success, on failure
- * returns -1 and sets errno.
+ * \returns - true  on success, false on failure (sets errno).
  */
 
-int
+bool
 set_recv_wait(int sockfd, int ms)
 {
     struct timeval tv;
@@ -98,7 +133,10 @@ set_recv_wait(int sockfd, int ms)
     tv.tv_sec = ms / 1000;
     tv.tv_usec = ( ms % 1000) * 1000;
 
-    return setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof tv);
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof tv) == -1)
+        return false;
+
+    return true;
 }
 
 /** 
@@ -109,11 +147,10 @@ set_recv_wait(int sockfd, int ms)
  *
  * \param int ms - How long to wait for send to complete, in milliseconds.
  *
- * \returns - Same as setsockopt - zero on success, on failure
- * returns -1 and sets errno.
+ * \returns - true on success, false on failure (sets errno).
  */
 
-int
+bool
 set_send_wait(int sockfd, int ms)
 {
     struct timeval tv;
@@ -121,7 +158,10 @@ set_send_wait(int sockfd, int ms)
     tv.tv_sec = ms / 1000;
     tv.tv_usec = ( ms % 1000) * 1000;
 
-    return setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof tv);
+    if(setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof tv) == -1)
+        return false;
+
+    return true;
 }
 
 
@@ -137,26 +177,33 @@ set_send_wait(int sockfd, int ms)
  * \param int ms - how long to attempt to send the data, in 
  *   milliseconds. If zero or less, will block indefinitely.
  *
- * \returns - On success returns number of bytes sent. On failure
- *            returns -1.
+ * \param int *sent - pass by reference to get number of bytes sent.
+ *
+ * \returns - true on success, false on failure.
  */
 
-int
-tcp_send(int sockfd, char *buf, int ms)
+bool
+tcp_send(int sockfd, char *buf, int ms, int *sent)
 {
-    int snt,
-        ret;
-
-    ret = 0;
+    int snt;
+    *sent = 0;
+#if 0
+        while(*sent < strlen(buf) + 1 )
+        {
+            snt = send(sockfd, buf, strlen(buf)+1, 0);
+            *sent += snt;
+        }
+#endif
 
     if(ms > 0)
-        if(set_send_wait(sockfd, ms) != 0)
-            ret = -1;
-    
-    while((snt = send(sockfd, buf, sizeof(buf), 0)) > 0)
-        ret += snt;
+    {
+        if(!set_send_wait(sockfd, ms))
+            return false;
 
-    return ret;
+        while((snt = send(sockfd, buf, strlen(buf)+1, 0)) > 0)
+            *sent += snt;
+    }
+    return (*sent > 0);
 }
 
 /**
@@ -185,11 +232,25 @@ tcp_recv(int sockfd, int ms, int max, int *total)
         i;
 
     chunk = 64;
+    *total = 0;
 
-    if((ms > 0) && (sockfd > -1) 
-            && (set_recv_wait(sockfd, ms) == 0) 
-            && ((buf = (char*)calloc(1, chunk * sizeof(char*))) != NULL)
-            && ((msg = (char*)calloc(1, chunk * sizeof(char*))) != NULL))
+    if(!set_recv_wait(sockfd, ms) || !(ms > 0))
+        return buf;
+
+
+    if((buf = (char*)calloc(1, chunk * sizeof(char))) == NULL)
+        return buf;
+
+    
+    if((msg = (char*)calloc(1, chunk * sizeof(char))) == NULL)
+    {
+        free(buf);
+        buf = NULL;
+        return buf;
+    }
+
+
+    if((ms > 0) && (sockfd > -1))
     {
         in = i = req = 0;
 
@@ -203,9 +264,10 @@ tcp_recv(int sockfd, int ms, int max, int *total)
             {
                 if(req >= max)
                 {
+                    /* We've hit our limit. Return what we're allowed.*/
                     free(buf);
-                    free(msg);
-                    exit(EMSGSIZE);
+                    *total = strlen(msg);
+                    return msg;
                 }
 
                 req =  (strlen(msg)+in) + ++i;
@@ -234,92 +296,94 @@ tcp_recv(int sockfd, int ms, int max, int *total)
 }
 
 #ifdef USE_OLD_RESOLVE
-    bool lookup(const char *s, const char *resolved)
+bool 
+lookup(const char *s, const char *resolved)
+{
+    struct hostent *hp;
+
+    if(inet_aton(s, NULL))
     {
-        struct hostent *hp;
+        /* Is an IP address */
+        hp = gethostbyaddr((char*)&addr, sizeof(addr), AF_INET);
 
-        if(inet_aton(s, NULL))
+        if(hp != NULL)
         {
-            /* Is an IP address */
-            hp = gethostbyaddr((char*)&addr, sizeof(addr), AF_INET);
-
-            if(hp != NULL)
-            {
-                resolved = hp->h_name;
-                return true;
-            }
+            resolved = hp->h_name;
+            return true;
         }
-        else
+    }
+    else
+    {
+        /* Not an IP address */
+        hp = gethostbyname(s);
+
+        if(hp!=NULL)
         {
-            /* Not an IP address */
-            hp = gethostbyname(s);
-
-            if(hp!=NULL)
-            {
-                resolved = inet_ntoa(*(struct in_addr*)hp->h_addr_list[0]);
-                return true;
-            }
+            resolved = inet_ntoa(*(struct in_addr*)hp->h_addr_list[0]);
+            return true;
         }
+    }
+    return false;
+}
+#else
+bool
+lookup(const char *s, const char *resolved)
+{
+    char hostbuf[NI_MAXHOST];
+    struct addrinfo *res;
+    struct addrinfo hints;
+    const char *addr;
+    int     err;
+
+    memset((char *) &hints, 0, sizeof(hints));
+
+    hints.ai_family = AF_INET; /* AF_INET - ipv4.
+                                * AF_INET6 - ipv6.
+                                * PF_UNSPEC - both / either.
+                                */
+
+    hints.ai_flags = AI_CANONNAME; /* Flag to populate ai_canonname 
+                                    * with the 'official' name for the host.
+                                    */
+
+    hints.ai_socktype = SOCK_STREAM; /* NOTE: use 0 for any socket type. */
+
+    if ((err = getaddrinfo(s, NULL, &hints, &res)) != 0)
+    {
+        /*host/address lookup failure.*/
+        freeaddrinfo(res);
         return false;
     }
-#else
-    bool lookup(const char *s, const char *resolved)
+
+    if(inet_aton(s, NULL))
     {
-        char hostbuf[NI_MAXHOST];
-        struct addrinfo *res;
-        struct addrinfo hints;
-        const char *addr;
-        int     err;
+        /* We've been given an IP, retreive the name. */
+        err = getnameinfo(res->ai_addr, res->ai_addrlen, hostbuf, 
+                sizeof(hostbuf), NULL, 0, NI_NAMEREQD);
 
-        memset((char *) &hints, 0, sizeof(hints));
-
-        hints.ai_family = AF_INET; /* AF_INET - ipv4.
-                                      * AF_INET6 - ipv6.
-                                      * PF_UNSPEC - both / either.
-                                      */
-
-        hints.ai_flags = AI_CANONNAME; /* Flag to populate ai_canonname 
-                                        * with the 'official' name for the host.
-                                        */
-
-        hints.ai_socktype = SOCK_STREAM; /* NOTE: use 0 for any socket type. */
-
-        if ((err = getaddrinfo(s, NULL, &hints, &res)) != 0)
+        if(err)
         {
-            /*host/address lookup failure.*/
+            /* getnameinfo failed. Free our resources and bail.
+             * Note - could use gai_strerror(err) to inspect
+             * the error.
+             */
             freeaddrinfo(res);
             return false;
         }
-
-        if(inet_aton(s, NULL))
-        {
-            /* We've been given an IP, retreive the name. */
-            err = getnameinfo(res->ai_addr, res->ai_addrlen, hostbuf, 
-                              sizeof(hostbuf), NULL, 0, NI_NAMEREQD);
-
-            if(err)
-            {
-                /* getnameinfo failed. Free our resources and bail.
-                 * Note - could use gai_strerror(err) to inspect
-                 * the error.
-                 */
-                freeaddrinfo(res);
-                return false;
-            }
-        }
-        else
-        {
-            /* We've been given a host, get the IP address. */
-            addr = (char *) &((struct sockaddr_in *) res->ai_addr)->sin_addr;
-
-            if (inet_ntop(res->ai_family, addr, hostbuf, sizeof(hostbuf)) == 0)
-            {
-                freeaddrinfo(res);
-                return false;
-            }
-        }
-        resolved = hostbuf;
-        freeaddrinfo(res);
-        return true;
     }
+    else
+    {
+        /* We've been given a host, get the IP address. */
+        addr = (char *) &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+
+        if (inet_ntop(res->ai_family, addr, hostbuf, sizeof(hostbuf)) == 0)
+        {
+            freeaddrinfo(res);
+            return false;
+        }
+    }
+    resolved = hostbuf;
+    freeaddrinfo(res);
+    return true;
+}
 #endif

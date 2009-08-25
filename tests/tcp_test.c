@@ -26,24 +26,38 @@
  * 
  */
 
-#ifndef _HL7_NETLIB_H_
-#define _HL7_NETLIB_H_ 1
-
+#define _GNU_SOURCE
 #include "common.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h> 
-#include <time.h>
+#include "proto.h"
+#include "net.h"
+
+extern char * program_invocation_short_name;
+#define program program_invocation_short_name
+
+bool
+tcp_test(int argc, char **argv)
+{
+    int sockfd;
+    int port = 80;
+    int len = 0;
+
+    char *host = "localhost";
+    char *buffer = "GET / HTTP/1.0\r\n\r\n";
+    char *getbuf = NULL;
+
+    if(!tcp_connect(host, port, &sockfd))
+        return false;
 
 
-//int tcp_connect(const char *host, int port);
-bool tcp_connect(const char *host, int port, int *sockfd);
-bool tcp_send(int sockfd, char *buf, int ms, int *sent);
-char * tcp_recv(int sockfd, int ms, int max, int *total);
-bool sock_create(int *sockfd);
+    if(!tcp_send(sockfd, buffer, 5000, &len))
+        return false;
+    
+    printf("sent %d bytes\n", len);
 
-bool set_recv_wait(int sockfd, int ms);
-bool set_send_wait(int sockfd, int ms);
+    len=0;
 
-#endif
+    if((getbuf=tcp_recv(sockfd, 5000, 9000, &len)) == NULL)
+        return false;
+
+    return true;
+}

@@ -39,12 +39,15 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <getopt.h>
+#include <sys/sendfile.h>
+
 
 #ifdef DEBUG
 #include <execinfo.h>
+#include <assert.h>
 #endif
 
+static const char* const libhl7c = "libhl7c v0.1";
 #endif

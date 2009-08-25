@@ -26,24 +26,26 @@
  * 
  */
 
-#ifndef _HL7_NETLIB_H_
-#define _HL7_NETLIB_H_ 1
-
-#include "common.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h> 
-#include <time.h>
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <assert.h>
+#include "tests.h"
 
 
-//int tcp_connect(const char *host, int port);
-bool tcp_connect(const char *host, int port, int *sockfd);
-bool tcp_send(int sockfd, char *buf, int ms, int *sent);
-char * tcp_recv(int sockfd, int ms, int max, int *total);
-bool sock_create(int *sockfd);
+int
+main(int argc, char **argv)
+{
+    if(client_test(argc, argv))
+        fprintf(stdout, "client test passed.\n");
+    else
+        fprintf(stderr, "client test failed.\n");
 
-bool set_recv_wait(int sockfd, int ms);
-bool set_send_wait(int sockfd, int ms);
+    if(tcp_test(argc, argv))
+        fprintf(stdout, "tcp test passed.\n");
+    else
+        fprintf(stderr, "tcp test failed.\n");
 
-#endif
+    return EXIT_SUCCESS;
+}

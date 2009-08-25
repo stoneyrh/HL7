@@ -1,61 +1,33 @@
-CFLAGS=-Iinclude -Wall -O2 -DDEBUG -g3 -dA -c
-LDFLAGS=
-CC=gcc
-LD=gcc
-SRCS= net.c array.c scan.c main.c
-OBJS= net.o array.o scan.o main.o
-CLIENT=hl7client
-SERVER=debug_server
+top_dir=.
+top_srcdir=.
+base=$(shell pwd)
+data=$(base)/data
+src=$(top_dir)/src
+srcs=$(wildcard src/*.c)
+objects=$(shell ls src/*.c | sed -re 's/\.c/.o/g')
 
-# For debugging
-TFILE=messages/adt_a04_13885_20090811203018
-THOST=localhost
-TPORT=2701
+target=libhl7c.so
+
+CFLAGS=-Iinclude -Wall -O2 -DDEBUG -g3 -dA
+LDFLAGS=-Wall --shared
+CC=gcc
+
 
 .PHONY: clean
 
-all: $(CLIENT) $(SERVER)
+all: $(objects) $(target)
 
-$(CLIENT): $(OBJS)
-	@echo [LD] $(OBJS)
-	@$(LD) -o $@ $(LDFLAGS) $(OBJS)
+$(target): $(objects)
+	@echo [$(target)]
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(target) $(objects)
 
-main.o: main.c
-	@echo [CC] $?
-	@$(CC) $(CFLAGS) $? 
-
-scan.o: scan.c
-	@echo [CC] $?
-	@$(CC) $(CFLAGS) $?
-
-array.o: array.c
-	@echo [CC] $?
-	@$(CC) $(CFLAGS) $? 
-
-net.o: net.c
-	@echo [CC] $?
-	@$(CC) $(CFLAGS) $?
-
-test: $(CLIENT) $(SERVER)
-	./$(CLIENT) $(THOST) $(TPORT) $(TFILE)
-
-strace: $(CLIENT) $(SERVER)
-	@strace ./$(CLIENT) $(THOST) $(TPORT) $(TFILE)
-
-ltrace: $(CLIENT) $(SERVER)
-	@ltrace ./$(CLIENT) $(THOST) $(TPORT) $(TFILE)
-
-$(SERVER): debug_server.c
-	@echo [CC] $?
-	@$(CC) $? -o $@
-
-mem: $(CLIENT) $(SERVER)
-	@echo [MEMCHECK] $(CLIENT)
-	@valgrind --leak-check=full -v ./$(CLIENT) $(THOST) $(TPORT) $(TFILE)
-
+install:
+	cp $(target) /usr/local/lib/
+	ldconfig
 clean:
-	@-rm -f core *.o $(CLIENT) $(SERVER) tags *.log
+	@-rm -f core src/*.o $(target)
 
 tags:
 	@ctags -a -R --recurse=yes --c++-kinds=+p --fields=+ifaS --extra=+q .
 
+include $(wildcard src/*.mk)

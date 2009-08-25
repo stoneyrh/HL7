@@ -28,13 +28,11 @@
 
 #ifndef _HL7_PROTO_H_
 #define _HL7_PROTO_H_
+#include "common.h"
 
 int getsize(const char *path);
 void die(FILE *err, int code, const char *fmt, ...);
 FILE * redirect(const char *path, const char *mode, FILE *stream);
 void usage(FILE * stream, int code);
-int handle_ack(const char * message);
 void trace(void);
-
-static char *program;
 #endif

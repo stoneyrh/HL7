@@ -26,24 +26,9 @@
  * 
  */
 
-#ifndef _HL7_NETLIB_H_
-#define _HL7_NETLIB_H_ 1
-
-#include "common.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h> 
-#include <time.h>
-
-
-//int tcp_connect(const char *host, int port);
-bool tcp_connect(const char *host, int port, int *sockfd);
-bool tcp_send(int sockfd, char *buf, int ms, int *sent);
-char * tcp_recv(int sockfd, int ms, int max, int *total);
-bool sock_create(int *sockfd);
-
-bool set_recv_wait(int sockfd, int ms);
-bool set_send_wait(int sockfd, int ms);
-
+#ifndef _LIBHL7C_TESTS_H_
+#define _LIBHL7C_TESTS_H_
+#include <stdbool.h>
+bool tcp_test(int argc, char **argv);
+bool client_test(int argc, char **argv);
 #endif
