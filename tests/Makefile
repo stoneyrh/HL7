@@ -2,6 +2,7 @@ top_dir=.
 top_srcdir=.
 CFLAGS=-I../include -Iinclude -Wall -O2 -DDEBUG -g3 -dA
 LDFLAGS=-L../ -lhl7c -L../
+LD_LIBRARY_PATH=../
 
 objects=$(shell ls *.c | sed -re 's/\.c/.o/g')
 target=runtests
@@ -10,9 +11,10 @@ file=../data/adt_a04_13885_20090811203018
 host=localhost
 port=2700
 
-.PHONY: clean
+.EXPORT_ALL_VARIABLES: environ
+.PHONY: clean environ
 
-all: $(objects) $(target)
+all: environ $(objects) $(target)
 
 $(target): $(objects)
 	@echo [CC] $?
@@ -30,6 +32,9 @@ ltrace: $(target)
 mem: $(target) 
 	@echo [MEMCHECK] $(target)
 	@valgrind --leak-check=full -v ./$(target) $(host) $(port) $(file)
+
+environ:
+	@echo fixing environ - make sure hl7lib has been built before running these tests!
 
 tags:
 	ln -s ../tags
