@@ -37,6 +37,8 @@
 int
 main(int argc, char **argv)
 {
+    fprintf(stderr, "%d\n", parser_test(argc, argv));
+#if 0
     if(client_test(argc, argv))
         fprintf(stdout, "client test passed.\n");
     else
@@ -46,6 +48,6 @@ main(int argc, char **argv)
         fprintf(stdout, "tcp test passed.\n");
     else
         fprintf(stderr, "tcp test failed.\n");
-
+#endif
     return EXIT_SUCCESS;
 }

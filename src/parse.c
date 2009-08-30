@@ -161,7 +161,7 @@ parse(const char *message)
 
     /* Release our memory. free_multi iterates
      * through each segment.
-     **/
+     */
     free_multi(hl7);
     free(ack);
     return true;

@@ -31,14 +31,15 @@
 /**
  * \file segment.c
  * \brief 
- *      Member function definitions for the segment structure.
+ *      Member function definitions for the segment object, as 
+ *      well as iterators.
  */
 
 
 /**
  * \fn segment_ctor
  * \brief 
- *      Constructor for the segment structure. Initializes a segment.
+ *      Constructor for the segment object. Initializes a segment.
  *
  * \param self - the segment we're initializing.
  * \returns the initialized segment.
@@ -47,7 +48,7 @@
 segment *
 segment_ctor(segment *self)
 {
-    /* Allocate the initial segment structure */
+    /* Allocate the initial segment object */
     self = calloc(1, sizeof(segment));
     self->len = 0;
     self->data = NULL; /* actual storage - indexed by zero. */
@@ -55,7 +56,8 @@ segment_ctor(segment *self)
     /* set up member functions */
     self->dtor = segment_dtor;
     self->push = segment_push;
-    self->begin = segment_begin;
+    self->begin = segment_begin; /* Note, this can be used to get the
+                                  * segment type. */
     self->end = segment_end;
 
     self->first = segment_first;
@@ -159,7 +161,7 @@ segment_push(segment *s, const void *item)
          * Below is almost exactly how strdup is implemented by
          * the GNU devs, except that I've made "out of memory"
          * a fatal error, instead of just returning NULL.
-         **/
+         */
 
         len = strlen(item) + 1;
         copy = malloc(len);
@@ -170,6 +172,7 @@ segment_push(segment *s, const void *item)
                     __func__, __LINE__);
             exit(ENOMEM);
         }
+
         s->data[s->len -1] = (char*)memcpy(copy, item, len);
     }
     return s;
@@ -179,22 +182,25 @@ segment_push(segment *s, const void *item)
 /**
  * \fn segment_dtor
  * \brief 
- *      The segment datatype's destructor. Iterates over and frees all elements in a.
+ *      Destructor for the segment object. Iterates over and frees all fields in a segment.
  *
- * \param a - the segment to free.
+ * \param s - the segment to free.
  */
 
 
 void
 segment_dtor(segment *s)
 {
-    void *it;
-    segment_iter *i;
+    void *it = NULL;
+    segment_iter *i = NULL;
 
-    for(i = segment_iter_ctor(s), it = i->begin(s); it != i->end(i); it = i->next(i))
+    i = segment_iter_ctor(s);
+
+    for(it = i->begin(s); it != i->end(i); it = i->next(i))
         free(it);
 
     i->dtor(i);
+
     free(s->data);
     free(s);
 
@@ -208,6 +214,7 @@ segment_iter_ctor(segment *s)
     /* setup our member functions... */
     i->klass = s;
     i->begin = s->begin;
+
     i->end   = segment_iter_end;
     i->dtor = segment_iter_dtor;
     i->next = segment_iter_next;
@@ -228,7 +235,7 @@ segment_iter_next(segment_iter *i)
     else
     {
         i->state = i->first;
-        it = NULL;
+        it = i->klass->end(i->klass);
     }
 
     return it;

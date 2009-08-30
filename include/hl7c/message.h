@@ -46,11 +46,12 @@ typedef struct _message
     /* member functions */
     struct _message *(*push)(struct _message *, segment *);
 
-    void *(*begin)(struct _message *);
-    void *(*end)(struct _message *);
+    segment *(*begin)(struct _message *);
+    segment *(*end)(struct _message *);
 
     int (*first)(struct _message *);
     int (*last)(struct _message *);
+    struct _message *(*parse)(FILE *, const char *, const char *, struct _message *);
 
     void (*dtor)(struct _message *);
 } message;
@@ -63,10 +64,10 @@ typedef struct _message_iter
     message * klass;
 
     /* member functions */
-    void *(*begin)(struct _message *);
-    void *(*end)(struct _message_iter *);
-    void (*dtor)(struct _message_iter *);
+    segment *(*begin)(struct _message *);
+    segment *(*end)(struct _message_iter *);
     void *(*next)(struct _message_iter *);
+    void (*dtor)(struct _message_iter *);
 } message_iter;
 
 
@@ -104,7 +105,7 @@ message * message_push(message *self, segment *seg);
  * \returns the first element in the message.
  */
 
-void * message_begin(message *self);
+segment * message_begin(message *self);
 
 /**
  * \fn message_end
@@ -115,7 +116,7 @@ void * message_begin(message *self);
  * \returns the one past the last element in the message.
  */
 
-void * message_end(message *self);
+segment * message_end(message *self);
 
 /**
  * \fn message_first
@@ -162,7 +163,7 @@ message_iter * message_iter_ctor(message *self);
  * \returns the first element in the message.
  */
 
-void * message_iter_begin(message_iter *i);
+segment * message_iter_begin(message_iter *i);
 
 /**
  * \fn message_iter_end
@@ -173,7 +174,7 @@ void * message_iter_begin(message_iter *i);
  * \returns One past the last element of the iterator.
  */
 
-void * message_iter_end(message_iter *i);
+segment * message_iter_end(message_iter *i);
 
 /**
  * \fn message_iter_next
@@ -186,6 +187,18 @@ void * message_iter_end(message_iter *i);
 
 void * message_iter_next(message_iter *i);
 
+/**
+ * \fn message_iter_dtor
+ * \brief destructor for the message iterator.
+ */
+
 void message_iter_dtor(message_iter *i);
+
+
+/**
+ * \fn message_parse
+ */
+
+message * message_parse(FILE *fp, const char *sep, const char *delim, message *msg);
 
 #endif

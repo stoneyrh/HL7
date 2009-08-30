@@ -26,12 +26,11 @@
  * 
  */
 
-#include "hl7c/scan.h"
+#include <hl7c/scan.h>
 
 /**
  * \file scan.c
  *
- * \brief Functions for man
  */
 
 Array *

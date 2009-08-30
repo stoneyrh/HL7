@@ -14,7 +14,7 @@ port=2700
 .EXPORT_ALL_VARIABLES: environ
 .PHONY: clean environ
 
-all: environ $(objects) $(target)
+all: clean environ $(objects) $(target)
 
 $(target): $(objects)
 	@echo [CC] $?
