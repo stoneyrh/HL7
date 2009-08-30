@@ -26,65 +26,84 @@
  * 
  */
 
-#ifndef _HL7_SCAN_H_
-#define _HL7_SCAN_H_ 1
+#include <hl7c/message.h>
 
-#define _GNU_SOURCE
-#include "common.h"
-
-/**
- * \file scan.h
- *
- * \brief Structures describing arrays and multidimensional
- * arrays, as well as function prototypes for handling them.
- *
- * Yes, yes, I know that char ** arrays are already
- * multidimensional, but I've been brainwashed by Python lists, 
- * PHP arrays, and C++ vectors. And I like it. (:
- *
- */
-
-/*
- * Array. 
- * TODO: Make this more generic?
- */
-
-typedef struct _Array
+message *
+message_ctor(message *self)
 {
-    int len;
-    int size;
-    char **data;
-} Array;
+    /* Allocate the initial message structure */
+    self = calloc(1, sizeof(message));
+    self->len = 0;
+    self->segments = NULL; /* actual storage - indexed by zero. */
 
-Array * array_init(void);
-Array * push(Array * array, const char * item);
-Array * array_scan(FILE * fp, char * sep, char * delim);
-void free_array(Array * array);
+    /* set up member functions */
+    self->dtor = message_dtor;
+    self->push = message_push;
+    self->begin = message_begin;
+    self->end = message_end;
 
-/*
- * Multidimensional Array.
- *
- * These should be analogous with their Array counterparts, only
- * returning and functioning with Multi's. 
- */
+    self->first = message_first;
+    self->last = message_last;
+    return self;
+}
 
-typedef struct _Multi
+
+void * 
+message_begin(message *self)
 {
-    int len;
-    int size;
-    Array **members;
-} Multi;
+    return *(self->segments + 0);
+}
 
-Multi * multi_init(void);
-Multi * mpush(Multi * multi, Array * array);
-Multi * multi_scan(FILE * fp, char * sep, char * delim);
-void free_multi(Multi * multi);
+void *
+message_end(message *self)
+{
+    return *(self->segments + self->len);
+}
+
+int
+message_first(message *self)
+{
+    return 0;
+}
+
+int
+message_last(message *m)
+{
+    return (m->len - 1);
+}
+
+message *
+message_push(message *m, segment *seg)
+{
+    /* Don't bother if message hasn't been initialized. */
+
+    if(m != NULL && seg != NULL)
+    {
+        m->segments = realloc(m->segments, sizeof(char*) * ++m->len);
+
+        if(m->segments == NULL)
+        {
+            fprintf(stderr, "%s: %d: Out of memory!\n",
+                    __func__, __LINE__);
+            exit(ENOMEM);
+        }
+        m->segments[m->len] = seg;
+    }
+    return m;
+}
 
 
-/* For debugging/lazy typers. Prints to stderr if DEBUG 
- * is defined. Does nothing if it isn't.
- */
+void
+message_dtor(message *m)
+{
+    int i;
+    if(m != NULL)
+    {
+        for(i=0; i != m->len; i++)
+            segment_dtor(m->segments[i]);
 
-void d(const char * fmt, ...);
-
-#endif
+        free(m->segments);
+        free(m);
+    }
+    return;
+}

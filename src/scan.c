@@ -26,7 +26,7 @@
  * 
  */
 
-#include "scan.h"
+#include "hl7c/scan.h"
 
 /**
  * \file scan.c

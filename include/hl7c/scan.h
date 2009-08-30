@@ -26,38 +26,65 @@
  * 
  */
 
+#ifndef _HL7_SCAN_H_
+#define _HL7_SCAN_H_ 1
+
 #define _GNU_SOURCE
 #include "hl7c/common.h"
-#include "hl7c/proto.h"
-#include "hl7c/net.h"
 
-extern char * program_invocation_short_name;
-#define program program_invocation_short_name
+/**
+ * \file scan.h
+ *
+ * \brief Structures describing arrays and multidimensional
+ * arrays, as well as function prototypes for handling them.
+ *
+ * Yes, yes, I know that char ** arrays are already
+ * multidimensional, but I've been brainwashed by Python lists, 
+ * PHP arrays, and C++ vectors. And I like it. (:
+ *
+ */
 
-bool
-tcp_test(int argc, char **argv)
+/*
+ * Array. 
+ * TODO: Make this more generic?
+ */
+
+typedef struct _Array
 {
-    int sockfd;
-    int port = 80;
-    int len = 0;
+    int len;
+    int size;
+    char **data;
+} Array;
 
-    char *host = "localhost";
-    char *buffer = "GET / HTTP/1.0\r\n\r\n";
-    char *getbuf = NULL;
+Array * array_init(void);
+Array * push(Array * array, const char * item);
+Array * array_scan(FILE * fp, char * sep, char * delim);
+void free_array(Array * array);
 
-    if(!tcp_connect(host, port, &sockfd))
-        return false;
+/*
+ * Multidimensional Array.
+ *
+ * These should be analogous with their Array counterparts, only
+ * returning and functioning with Multi's. 
+ */
+
+typedef struct _Multi
+{
+    int len;
+    int size;
+    Array **members;
+} Multi;
+
+Multi * multi_init(void);
+Multi * mpush(Multi * multi, Array * array);
+Multi * multi_scan(FILE * fp, char * sep, char * delim);
+void free_multi(Multi * multi);
 
 
-    if(!tcp_send(sockfd, buffer, 5000, &len))
-        return false;
-    
-    printf("sent %d bytes\n", len);
+/* For debugging/lazy typers. Prints to stderr if DEBUG 
+ * is defined. Does nothing if it isn't.
+ */
 
-    len=0;
+void d(const char * fmt, ...);
 
-    if((getbuf=tcp_recv(sockfd, 5000, 9000, &len)) == NULL)
-        return false;
-
-    return true;
-}
+#endif

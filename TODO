@@ -1,4 +1,5 @@
 * Add autoconf support.
+* Finish writing documentation. Will be using doxygen.
 * Write Array/Multi to string routine to repack the data.
 * Implement basic TCP/LLP listener.
 * Write real unit tests. Using the make file to test is annoying.

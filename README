@@ -1,4 +1,4 @@
-HL7 message parser, in C.
+HL7 message handling library, in C.
 
 Currently has been tested on Ubuntu 8.04, 8.10, 9.04, and AntiX 
 (Mepis) 8. (All Debian-based distributions of Linux.)
@@ -8,3 +8,10 @@ While I plan on adding autoconf support, for now just type 'make'.
 The test currently requires you install the debug server into inetd.
 As soon as I've finished a real listener (it's in the works), 
 I'll fix that.
+
+The end goal is to make it work in a similar fashion to hl7libpp[1], 
+as one can likely tell by the use of structures / function pointers
+to emulate member functions. OO concepts are fun in C. (:
+
+
+[1] http://code.google.com/p/hl7libpp/

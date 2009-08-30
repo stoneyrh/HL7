@@ -26,11 +26,10 @@
  * 
  */
 
-#define _GNU_SOURCE
-#include "scan.h"
-#include "proto.h"
-#include "net.h"
-#include "parse.h"
+#include <hl7c/scan.h>
+#include <hl7c/proto.h>
+#include <hl7c/net.h>
+#include <hl7c/parse.h>
 
 #define MAX_READ 65535
 extern char * program_invocation_short_name;

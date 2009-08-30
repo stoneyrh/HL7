@@ -1,4 +1,4 @@
-#include "proto.h"
+#include "hl7c/proto.h"
 
 int
 getsize(const char *path)

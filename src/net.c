@@ -27,8 +27,8 @@
  */
 
 
-#include "net.h"
-#include "proto.h"
+#include "hl7c/net.h"
+#include "hl7c/proto.h"
 
 #if 0
     bool Socket::create()
