@@ -32,4 +32,5 @@
 bool tcp_test(int argc, char **argv);
 bool client_test(int argc, char **argv);
 bool parser_test(int argc, char **argv);
+bool testread(int argc, char **argv);
 #endif

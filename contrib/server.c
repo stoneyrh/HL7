@@ -42,9 +42,11 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <libgen.h>
-#include "common.h"
-#include "proto.h"
-#include "net.h"
+
+
+#include <hl7c/common.h>
+#include <hl7c/proto.h>
+#include <hl7c/net.h>
 
 extern char * program_invocation_short_name; /* basename(argv[0]), but global */
 #define program program_invocation_short_name
@@ -94,7 +96,7 @@ main(int argc, char **argv)
                 dolog = true;
                 break;
 
-            case 'a':       /* -o or --output ... optional */
+            case 'a':       /* -a or --ackfile... optional */
                 goodack = optarg;
                 doack = true;
                 break;
@@ -125,19 +127,21 @@ main(int argc, char **argv)
     buf = tcp_recv(fileno(stdin), 5000, 4096, &len);
 
     if(dolog)
-        fprintf(out, " got %d bytes.\nMessage:'%s'\n", len, buf);
+        fprintf(out, "[%d bytes] %s\n", len, buf);
 
 
     if(doack)
     {
-        fsize=getsize(goodack);
+        fsize = getsize(goodack);
+
         if(dolog)
             fprintf(out, "%s is %d bytes\n", goodack, fsize);
 
-        if(fsize>0)
+        if(fsize > 0)
         {
-            if((read_fd = open(goodack, O_RDONLY))>0)
+            if((read_fd = open(goodack, O_RDONLY)) > 0)
             {
+                /* Return an ack as quickly as possible. */
                 sendfile(fileno(stdout), read_fd, &offset, fsize);
                 close(read_fd);
             }

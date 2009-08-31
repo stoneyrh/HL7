@@ -35,4 +35,5 @@ void die(FILE *err, int code, const char *fmt, ...);
 FILE * redirect(const char *path, const char *mode, FILE *stream);
 void usage(FILE * stream, int code);
 void trace(void);
+bool readmsg(const char *s);
 #endif
