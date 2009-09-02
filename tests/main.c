@@ -37,11 +37,15 @@
 int
 main(int argc, char **argv)
 {
+
     if(testread(argc, argv))
         fprintf(stderr, "testread passed.\n");
 
+//    if(parser_test(argc, argv))
+//        fprintf(stderr, "parser_test passed.\n");
+
+
 #if 0
-    fprintf(stderr, "%d\n", parser_test(argc, argv));
     if(client_test(argc, argv))
         fprintf(stdout, "client test passed.\n");
     else

@@ -12,10 +12,9 @@ CFLAGS=-Iinclude -Wall -O2 -DDEBUG -g3 -dA
 LDFLAGS=-Wall --shared
 CC=gcc
 
-
 .PHONY: clean
 
-all: $(objects) $(target)
+all: clean $(objects) $(target)
 
 $(target): $(objects)
 	@echo [$(target)]

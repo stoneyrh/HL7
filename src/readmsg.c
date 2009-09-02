@@ -44,9 +44,10 @@
  **/
 
 bool
-readmsg(const char *s)
+readmsg(const char *str)
 {
-    int errn;
+    int errn,
+        i;
 
     FILE *msg_handle  = NULL;    /* "file" handle. */
     char *ack         = NULL;    /* Copy of message received. */
@@ -65,7 +66,7 @@ readmsg(const char *s)
      * passed to it.
      */
 
-    ack = strdup(s);
+    ack = strdup(str);
 
     if(ack == NULL)
     {
@@ -85,25 +86,26 @@ readmsg(const char *s)
             "%s: Memory error! (see return code)\n", libhl7c);
     }
 
-    /* Construct our message object. */
     msg = message_ctor(msg);
-
-    /* Parse the message. */
     msg = msg->parse(msg_handle, "\r", "|", msg);
-
-    /* Release the "handle" */
     fclose(msg_handle);
 
-    /* Scan through segments */
     for(mi = message_iter_ctor(msg), /* Construct message iterator, and */
         seg = mi->begin(msg);        /* initialize segment to the first one in the message. */
         seg != mi->end(mi);          /* While seg != one past end, */
-        seg = mi->next(mi));         /* go on to next segment. */
+        seg = mi->next(mi))          /* go on to next segment. */
     {
-        /* Same as above, but for fields in segments. */
-        for(si = segment_iter_ctor(seg), field = si->begin(seg); field != si->end(si); field = si->next(si))
-            fprintf(stderr, "%s\n", field);
+        printf("%-6.4s %-8.6s %-10.4s\n", "Seq.", "Seg.", "Data");
 
+        /* Same as above, but for fields in segments. */
+        for(i = 0, si = segment_iter_ctor(seg), field = si->begin(seg); field != si->end(si); field = si->next(si), i++)
+            printf("[%-3d]%2s%-6.10s [%-8s]\n", i, " ", (char *)seg->begin(seg), field);
+
+        mklines(25, stdout);
+        printf(" End of '%s' ", (char *)seg->begin(seg));
+        mklines(25, stdout);
+
+        printf("\n\n");
         si->dtor(si); 
     }
     /* Clean up message iterator.*/

@@ -191,41 +191,42 @@ message_iter_dtor(message_iter *i)
  *      within the message object.
  *
  *  \param fp
+ *  \param sep
+ *  \param delim
+ *  \param msg
  */
-
 
 message *
 message_parse(FILE *fp, const char *sep, const char *delim, message *msg)
 {
     FILE *fake_line;   /* fake file pointer */
 
-    int llen = 0;
-    int flen = 0;
+    int llen = 0;       /* length of line    */
+    int flen = 0;       /* length of field   */
+    int err  = 0;       /* storage for errno */
 
     size_t l = 0;       /* Needed for first getdelim */
     size_t f = 0;       /* Needed for second getdelim */
 
-    int err = 0;        /* storage for errno */
-
-    char *line = NULL;
-    char *field = NULL;
+    char *line   = NULL;
+    char *field  = NULL;
+    segment *seg = NULL;
     char end[3];
 
-    segment *seg = NULL;
-
     /* Break data into lines */
-    while((llen=getdelim(&line, &l, sep[0], fp)) != -1)
+    while((llen = getdelim(&line, &l, sep[0], fp)) != -1)
     {
-        (void)snprintf(end, 2, "%c", line[llen-1]);
+        /* Remove the record separator from the line. */
+        snprintf(end, 2, "%c", line[llen - 1]);
 
         if(strcmp(end, sep) == 0)
-            line[llen-1] = '\0';
+            line[llen - 1] = 0;
 
         /* Create fake file pointer for our second scan. */
         if((fake_line = fmemopen(line, strlen(line)+1, "r")) == NULL)
         {
             err = errno;
-            (void)fprintf(stderr, "Internal error: aborting\n");
+            fprintf(stderr, "Internal error: aborting\n");
             exit(err);
         }
 
@@ -233,12 +234,13 @@ message_parse(FILE *fp, const char *sep, const char *delim, message *msg)
         seg = segment_ctor(seg);
 
         /* Now break each line into fields */
-        while((flen=getdelim(&field, &f, delim[0], fake_line)) != -1)
+        while((flen = getdelim(&field, &f, delim[0], fake_line)) != -1)
         {
             /* Remove the delimiter from the field. */
-            (void)snprintf(end, 2, "%c", field[flen-1]);
+            snprintf(end, 2, "%c", field[flen - 1]);
+
             if(strcmp(end, delim) == 0)
-                field[flen-1] = '\0';
+                field[flen - 1] = 0;
 
             /*
              * Make a copy of the field, push it into our Array.
@@ -247,11 +249,14 @@ message_parse(FILE *fp, const char *sep, const char *delim, message *msg)
 
             seg = seg->push(seg, field);
         }
-        (void)fclose(fake_line);
+
+        fclose(fake_line);
         msg = msg->push(msg, seg);
     }
 
+    fprintf(stderr, "%s:%d: test\n", __func__, __LINE__);
     free(line);
     free(field);
+    fprintf(stderr, "%s:%d: test\n", __func__, __LINE__);
     return msg;
 }

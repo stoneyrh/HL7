@@ -26,13 +26,43 @@
  * 
  */
 
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <hl7c/proto.h>
+
+const char *filename = "../data/adt_a04_13885_20090811203018";
 
 bool
 testread(int argc, char **argv)
 {
-    const char *msg = "MSH|^~\\&|SendingApp|SendingFacility|ReceivingApplication|ReceivingFacility|20090811203018||ADT^A04||P|2.3|||||||\rEVN|A04|20090811203018||||\rPID|1|13885|13885||Public^John^Q^^^||19700101|M|||1234 Test Avenue^Pat Line 2^Nashville^TN^12345^US^^^^^||(555)555-1234^PRN^PH|(555)555-1234^WPN^PH|M|||13885|111-22-3344|||||||||||\rPV1|1|O||R|||DOC^Doctor^Test^M.D.^^^|DOC^Doctor^Test^MD^^^||||||||||||||||||||||||||||||||||||||||||||\rGT1|1|13886|Public^Jane^Q^^^||1234 Test Ln.^Gua Line 2^Nashville^TN^12345^US^^^^^|(555)555-1234^PRN^PH|(800)555-1234^WPN^PH|||||111-22-4433|||||^^^^^US^^^^^|||1- Employed full time|||||||||||||||||||||||||||||||||||\rIN1|1|UHC3||United Health Care|P.O. Box 12345^^Atlanta^GA^12345^US^^^^^||(555)555-5555^WPN^PH|IN1 GROUP NAME||||20081201|20151201|||Public^John^Q^^^|1- Self|19700101|1234 Test Avenue^^Nashville^TN^12345^US^^^^^|Y|||||||Y|||||||||111223344|0.00|||||1- Employed full time|M|^^^^^US^^^^^|||||111223344\rIN1|2|BCBS||Blue Cross Blue Shield|P.O. Box 12345^^Salt Lake City^UT^12345^US^^^^^||(555)555-5555^WPN^PH|IN2 GROUP NAME||||20081201|20151201|||Public^Jane^Q^^^|2- Spouse|19040101|1234 Test Avenue^^Nashville^TN^12345^US^^^^^|Y|||||||Y|||||||||111223344|0.00|||||1- Employed full time|F|^^^^^US^^^^^|||||111223344\r\r";
-    bool ret;
+    FILE *fp;
+    char *msg;
+    int s = 0;
+    bool ret = true;
+
+    s = getsize(filename);
+
+    if(!s)
+        return false; // empty file;
+
+    if((fp=fopen(filename, "r"))==NULL)
+        return false; // couldn't open file.
+
+    if((msg = calloc(1, s*sizeof(char))) == NULL)
+        return false; // memory error.
+
+    if(read(fileno(fp), msg, s) != s)
+        return false; // Failed/partial read.
+
+    fclose(fp);
+
+    msg = trim_left(msg, "\v");
+    msg = trim_right(msg, '\n');
+
     ret = readmsg(msg);
+
+    free(msg);
+
     return ret;
 }

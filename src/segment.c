@@ -27,6 +27,9 @@
  */
 
 #include <hl7c/segment.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 /**
  * \file segment.c
@@ -173,7 +176,7 @@ segment_push(segment *s, const void *item)
             exit(ENOMEM);
         }
 
-        s->data[s->len -1] = (char*)memcpy(copy, item, len);
+        s->data[s->len - 1] = (char*)memcpy(copy, item, len);
     }
     return s;
 }
@@ -276,4 +279,28 @@ segment_iter_dtor(segment_iter *i)
 {
     free(i);
     return;
+}
+
+
+/**
+ * \fn segment_parse(const char *line, const char *sep; const char *delim)
+ *
+ */
+
+segment *
+segment_parse(segment *self, const char *line, const char *sep, const char *delim)
+{
+    /* TODO: place line parsing logic here, so the segments can 
+     * handle their own data.
+     *
+     * Maybe something like 
+     * fp = fmemopen(line ...);
+     * while((flen=getdelim(char *, size_t, fp))!= -1)
+     * {
+     *      ....
+     * }
+     *
+     *
+     */
+    return self;
 }

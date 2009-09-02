@@ -15,6 +15,15 @@ getsize(const char *path)
     return st.st_size;
 }
 
+void
+mklines(int num, FILE *out)
+{
+    int i;
+    for(i = 0; i <= num; i++)
+        fprintf(out, "-");
+    return;
+}
+
 
 void
 die(FILE *err, int code, const char *fmt, ...)
@@ -47,4 +56,27 @@ redirect(const char *path, const char *mode, FILE *stream)
         return NULL;
     
     return fp;
+}
+
+char *
+trim_right(char *s, int c)
+{
+    if(s == NULL)
+        return NULL;
+
+    register int i = strlen(s);
+
+    while(i > 0 && s[i - 1] == c)
+        s[--i] = 0;
+
+    return s;
+}
+
+char *
+trim_left(char *s, char *c)
+{
+    if(s == NULL)
+        return NULL;
+
+    return memmove(s, &s[strspn(s, c)], strlen(s));
 }

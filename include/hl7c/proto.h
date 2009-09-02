@@ -36,4 +36,7 @@ FILE * redirect(const char *path, const char *mode, FILE *stream);
 void usage(FILE * stream, int code);
 void trace(void);
 bool readmsg(const char *s);
+void mklines(int num, FILE *out);
+char * trim_left(char *s, char *c);
+char * trim_right(char *s, int c);
 #endif
