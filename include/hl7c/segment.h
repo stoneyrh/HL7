@@ -29,13 +29,11 @@
 #ifndef _HL7_SEGMENT_H_
 #define _HL7_SEGMENT_H_
 
-#include <stdio.h>  /* fprintf */
+#include <stdio.h>  /* fprintf, getdelim */
 #include <stdlib.h> /* calloc, realloc, free */
 #include <string.h> /* strlen */
 #include <errno.h>  /* errno and various error definitions - ENOMEM, etc. */
-
 #include <stddef.h> /* offsetof(struct, pos)  - mainly for debugging. */
-#include <malloc.h> /* ptrdiff_t */
 
 typedef struct _segment
 {
@@ -44,6 +42,14 @@ typedef struct _segment
 
     /* member functions */
     struct _segment *(*push)(struct _segment *, const void *);
+
+/**
+ * \fn segment->parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim)
+ * \brief
+ *      Handles breaking a segment into its own individual fields.
+ */
+
+    struct _segment *(*parse)(struct _segment *, FILE *, const char *, const char *, const char *);
 
     void *(*begin)(struct _segment *);
     void *(*end)(struct _segment *);
@@ -186,5 +192,11 @@ void * segment_iter_end(segment_iter *i);
 void * segment_iter_next(segment_iter *i);
 
 void segment_iter_dtor(segment_iter *i);
+
+
+/**
+ * \fn segment_parse()
+ */
+segment * segment_parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim);
 
 #endif

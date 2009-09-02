@@ -26,8 +26,6 @@
  * 
  */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -52,6 +50,9 @@ readmsg(const char *str)
     FILE *msg_handle  = NULL;    /* "file" handle. */
     char *ack         = NULL;    /* Copy of message received. */
     char *field       = NULL;
+
+    char *copy        = NULL;
+    char *segcpy      = NULL;
 
     message *msg      = NULL;
     segment *seg      = NULL;
@@ -87,7 +88,7 @@ readmsg(const char *str)
     }
 
     msg = message_ctor(msg);
-    msg = msg->parse(msg_handle, "\r", "|", msg);
+    msg = msg->parse(msg, msg_handle, "\r", "|");
     fclose(msg_handle);
 
     for(mi = message_iter_ctor(msg), /* Construct message iterator, and */
@@ -95,17 +96,29 @@ readmsg(const char *str)
         seg != mi->end(mi);          /* While seg != one past end, */
         seg = mi->next(mi))          /* go on to next segment. */
     {
-        printf("%-6.4s %-8.6s %-10.4s\n", "Seq.", "Seg.", "Data");
+        printf("%-6.4s %-10.7s %-10.5s %-10.4s\n", "Seq.", "Segment", "Field", "Data");
 
         /* Same as above, but for fields in segments. */
         for(i = 0, si = segment_iter_ctor(seg), field = si->begin(seg); field != si->end(si); field = si->next(si), i++)
-            printf("[%-3d]%2s%-6.10s [%-8s]\n", i, " ", (char *)seg->begin(seg), field);
+        {
+            if(has_cntrl(field))
+            {
+                copy = convert_cntrl(field);
+                segcpy = convert_cntrl((char*)seg->begin(seg));
 
-        mklines(25, stdout);
-        printf(" End of '%s' ", (char *)seg->begin(seg));
-        mklines(25, stdout);
+                printf("[%-3d]%2s%-10.12s %-10d [%s]\n", i, " ", segcpy, i + 1, copy);
+
+                free(segcpy);
+                free(copy);
+            }
+            else
+            {
+                printf("[%-3d]%2s%-10.12s %-10d [%s]\n", i, " ", (char *)seg->begin(seg), i + 1, field);
+            }
+        }
 
         printf("\n\n");
+
         si->dtor(si); 
     }
     /* Clean up message iterator.*/

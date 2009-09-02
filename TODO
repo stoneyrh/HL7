@@ -1,3 +1,5 @@
+* Move member function definitions to be static, in the c files. Can use them 
+through their objects.
 * Add autoconf support.
 * Finish writing documentation. Will be using doxygen.
 * Write Array/Multi to string routine to repack the data.

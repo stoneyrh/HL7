@@ -51,8 +51,20 @@ typedef struct _message
 
     int (*first)(struct _message *);
     int (*last)(struct _message *);
-    struct _message *(*parse)(FILE *, const char *, const char *, struct _message *);
 
+/**
+ * \fn message->parse(message *msg, FILE *fp, char *sep, char *delim)
+ * \brief
+ *      Parses over a file stream, and builds out segment objects
+ *      within the message object.
+ *
+ *  \param msg
+ *  \param fp
+ *  \param sep
+ *  \param delim
+ */
+
+    struct _message *(*parse)(struct _message *, FILE *, const char *, const char *);
     void (*dtor)(struct _message *);
 } message;
 
@@ -199,6 +211,6 @@ void message_iter_dtor(message_iter *i);
  * \fn message_parse
  */
 
-message * message_parse(FILE *fp, const char *sep, const char *delim, message *msg);
+message * message_parse(message *msg, FILE *fp, const char *sep, const char *delim);
 
 #endif

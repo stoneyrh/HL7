@@ -26,10 +26,8 @@
  * 
  */
 
-#include <hl7c/segment.h>
-#ifdef DEBUG
 #include <stdio.h>
-#endif
+#include <hl7c/segment.h>
 
 /**
  * \file segment.c
@@ -281,16 +279,10 @@ segment_iter_dtor(segment_iter *i)
     return;
 }
 
-
-/**
- * \fn segment_parse(const char *line, const char *sep; const char *delim)
- *
- */
-
 segment *
-segment_parse(segment *self, const char *line, const char *sep, const char *delim)
+segment_parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim)
 {
-    /* TODO: place line parsing logic here, so the segments can 
+    /* TODO: place line/segment parsing logic here, so the segments can 
      * handle their own data.
      *
      * Maybe something like 
@@ -302,5 +294,25 @@ segment_parse(segment *self, const char *line, const char *sep, const char *deli
      *
      *
      */
+    char *field = NULL;
+    int flen    = 0;
+    size_t f    = 0;
+    char end[3];
+
+    while((flen = getdelim(&field, &f, delim[0], fp)) != -1)
+    {
+        /* Remove the delimiter from the field. */
+        snprintf(end, 2, "%c", field[flen - 1]);
+
+        if(strcmp(end, delim) == 0)
+            field[flen - 1] = 0;
+
+        /*
+         * Make a copy of the field, push it into our Array.
+         * Must use free_array to clean up afterward.
+         */
+
+        self = self->push(self, field);
+    }
     return self;
 }

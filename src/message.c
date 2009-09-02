@@ -26,7 +26,6 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <hl7c/message.h>
 #include <hl7c/segment.h>
@@ -184,20 +183,8 @@ message_iter_dtor(message_iter *i)
 }
 
 
-/**
- * \fn message_parse(FILE *fp, char *sep, char *delim, message *msg)
- * \brief
- *      Parses over a file stream, and builds out segment objects
- *      within the message object.
- *
- *  \param fp
- *  \param sep
- *  \param delim
- *  \param msg
- */
-
 message *
-message_parse(FILE *fp, const char *sep, const char *delim, message *msg)
+message_parse(message *msg, FILE *fp, const char *sep, const char *delim)
 {
     FILE *fake_line;   /* fake file pointer */
 
@@ -254,9 +241,7 @@ message_parse(FILE *fp, const char *sep, const char *delim, message *msg)
         msg = msg->push(msg, seg);
     }
 
-    fprintf(stderr, "%s:%d: test\n", __func__, __LINE__);
     free(line);
     free(field);
-    fprintf(stderr, "%s:%d: test\n", __func__, __LINE__);
     return msg;
 }

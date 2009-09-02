@@ -58,7 +58,7 @@ bool parser_test(int argc, char **argv)
                           * are constructed by the parser.
                           */
 
-    m = m->parse(fp, "\r", "|", m); /* Parse the message. */
+    m = m->parse(m, fp, "\r", "|"); /* Parse the message. */
 
     fclose(fp);
 

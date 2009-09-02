@@ -29,6 +29,7 @@
 #ifndef _HL7_PROTO_H_
 #define _HL7_PROTO_H_
 #include "common.h"
+#include <ctype.h>
 
 int getsize(const char *path);
 void die(FILE *err, int code, const char *fmt, ...);
@@ -39,4 +40,6 @@ bool readmsg(const char *s);
 void mklines(int num, FILE *out);
 char * trim_left(char *s, char *c);
 char * trim_right(char *s, int c);
+char * convert_cntrl(const char *s);
+bool has_cntrl(const char *s);
 #endif

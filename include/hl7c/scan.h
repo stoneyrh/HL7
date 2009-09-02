@@ -28,8 +28,6 @@
 
 #ifndef _HL7_SCAN_H_
 #define _HL7_SCAN_H_ 1
-
-#define _GNU_SOURCE
 #include "hl7c/common.h"
 
 /**

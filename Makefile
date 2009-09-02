@@ -8,7 +8,7 @@ objects=$(shell ls src/*.c | sed -re 's/\.c/.o/g')
 
 target=libhl7c.so
 
-CFLAGS=-Iinclude -Wall -O2 -DDEBUG -g3 -dA
+CFLAGS=-Iinclude -Wall -O2 -D_GNU_SOURCE -DDEBUG -g3 -dA
 LDFLAGS=-Wall --shared
 CC=gcc
 

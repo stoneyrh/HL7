@@ -26,8 +26,7 @@
  * 
  */
 
-#define _GNU_SOURCE
-#include "hl7c/parse.h"
+#include <hl7c/parse.h>
 
 /*
  * \fn parse
