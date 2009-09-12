@@ -63,6 +63,7 @@ segment_ctor(segment *self)
 
     self->first = segment_first;
     self->last = segment_last;
+    self->parse = segment_parse;
 
     return self;
 }
@@ -280,25 +281,23 @@ segment_iter_dtor(segment_iter *i)
 }
 
 segment *
-segment_parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim)
+segment_parse(segment *self, char *line, const char *delim)
 {
-    /* TODO: place line/segment parsing logic here, so the segments can 
-     * handle their own data.
-     *
-     * Maybe something like 
-     * fp = fmemopen(line ...);
-     * while((flen=getdelim(char *, size_t, fp))!= -1)
-     * {
-     *      ....
-     * }
-     *
-     *
-     */
+    FILE *fp    = NULL;
     char *field = NULL;
-    int flen    = 0;
+    int flen    = 0;       /* length of field. */
+    int err     = 0;       /* storage for errno */
     size_t f    = 0;
     char end[3];
 
+    if((fp = fmemopen(line, strlen(line) + 1, "r")) == NULL)
+    {
+        err = errno;
+        fprintf(stderr, "Internal error: aborting\n");
+        exit(err);
+    }
+
+    /* Break line into fields. */
     while((flen = getdelim(&field, &f, delim[0], fp)) != -1)
     {
         /* Remove the delimiter from the field. */
@@ -307,12 +306,12 @@ segment_parse(segment *self, FILE *fp, const char *line, const char *sep, const 
         if(strcmp(end, delim) == 0)
             field[flen - 1] = 0;
 
-        /*
-         * Make a copy of the field, push it into our Array.
-         * Must use free_array to clean up afterward.
-         */
-
+        /* Make a copy of the field, push it into our segment. */
         self = self->push(self, field);
     }
+
+    fclose(fp);
+    free(field);
+
     return self;
 }

@@ -44,12 +44,12 @@ typedef struct _segment
     struct _segment *(*push)(struct _segment *, const void *);
 
 /**
- * \fn segment->parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim)
+ * \fn segment->parse(segment *self, char *line, const char *delim)
  * \brief
  *      Handles breaking a segment into its own individual fields.
  */
 
-    struct _segment *(*parse)(struct _segment *, FILE *, const char *, const char *, const char *);
+    struct _segment *(*parse)(struct _segment *, char *, const char *);
 
     void *(*begin)(struct _segment *);
     void *(*end)(struct _segment *);
@@ -197,6 +197,6 @@ void segment_iter_dtor(segment_iter *i);
 /**
  * \fn segment_parse()
  */
-segment * segment_parse(segment *self, FILE *fp, const char *line, const char *sep, const char *delim);
+segment * segment_parse(segment *self, char *line, const char *delim);
 
 #endif

@@ -182,22 +182,13 @@ message_iter_dtor(message_iter *i)
     return;
 }
 
-
 message *
 message_parse(message *msg, FILE *fp, const char *sep, const char *delim)
 {
-    FILE *fake_line;   /* fake file pointer */
-
-    int llen = 0;       /* length of line    */
-    int flen = 0;       /* length of field   */
-    int err  = 0;       /* storage for errno */
-
-    size_t l = 0;       /* Needed for first getdelim */
-    size_t f = 0;       /* Needed for second getdelim */
-
-    char *line   = NULL;
-    char *field  = NULL;
     segment *seg = NULL;
+    char *line   = NULL;
+    int llen     = 0;       /* length of line  */
+    size_t l     = 0;
     char end[3];
 
     /* Break data into lines */
@@ -209,39 +200,13 @@ message_parse(message *msg, FILE *fp, const char *sep, const char *delim)
         if(strcmp(end, sep) == 0)
             line[llen - 1] = 0;
 
-        /* Create fake file pointer for our second scan. */
-        if((fake_line = fmemopen(line, strlen(line)+1, "r")) == NULL)
-        {
-            err = errno;
-            fprintf(stderr, "Internal error: aborting\n");
-            exit(err);
-        }
-
-        /* Construct our segment object */
+        /* Construct our segment object, parse the line, and push
+         * the segment into our message.
+         */
         seg = segment_ctor(seg);
-
-        /* Now break each line into fields */
-        while((flen = getdelim(&field, &f, delim[0], fake_line)) != -1)
-        {
-            /* Remove the delimiter from the field. */
-            snprintf(end, 2, "%c", field[flen - 1]);
-
-            if(strcmp(end, delim) == 0)
-                field[flen - 1] = 0;
-
-            /*
-             * Make a copy of the field, push it into our Array.
-             * Must use free_array to clean up afterward.
-             */
-
-            seg = seg->push(seg, field);
-        }
-
-        fclose(fake_line);
+        seg = seg->parse(seg, line, delim);
         msg = msg->push(msg, seg);
     }
-
     free(line);
-    free(field);
     return msg;
 }
