@@ -1,0 +1,6 @@
+*.o
+*.obj
+*.a
+tests/runtests
+contrib/server
+.sconsign.dblite

@@ -1,0 +1,9 @@
+import os
+
+Import('env')
+
+env = env.Clone()
+
+env.Append(CPPPATH = ['include'], LIBPATH = ['..'], LIBS = ['hl7c'])
+sources = env.Glob('*.c')
+env.Program('runtests', sources)
